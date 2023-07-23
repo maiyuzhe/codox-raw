@@ -1,0 +1,22 @@
+#include "ui/menudef.h"
+{
+	menuDef
+	{
+		name "xpbar_hd"
+		rect 0 0 640 480 0 0
+		visible 1 
+		forecolor 1 1 1 1
+		itemDef
+		{
+			name "subtitle"
+			rect 0 0 0 0 2 3
+			visible 1
+			forecolor 1 1 1 1
+			type 19
+			textalign 5
+			textscale 0.38
+			gamemsgwindowindex 2
+			gamemsgwindowmode 1
+		}
+	}
+}
