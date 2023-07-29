@@ -114,8 +114,9 @@
     mapimage     "preview_mp_underpass"
     mapoverlay   "compass_overlay_map_blank"
     allieschar   "socom_141_forest"
-    axischar     "militia"
+    axischar     "opforce_composite"
     environment  "forest"
+	useteamzones "true"
 }
 
 {
@@ -360,7 +361,7 @@
     mapimage     "preview_mp_nuked"
     mapoverlay   "compass_overlay_map_blank"
     allieschar   "socom_141_desert"
-    axischar     "opforce_airborne"
+    axischar     "opforce_composite"
     useteamzones "true"
     environment  "desert"
 }

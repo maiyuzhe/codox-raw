@@ -206,13 +206,13 @@ deadlyKillstreak( streakName )
 }
 
 
-killstreakUsePressed()
+killstreakUsePressed(index)
 {
-	streakName = self.pers["killstreaks"][0].streakName;
-	lifeId = self.pers["killstreaks"][0].lifeId;
-	isEarned = self.pers["killstreaks"][0].earned;
-	awardXp = self.pers["killstreaks"][0].awardXp;
-	kID = self.pers["killstreaks"][0].kID;
+	streakName = self.pers["killstreaks"][index].streakName;
+	lifeId = self.pers["killstreaks"][index].lifeId;
+	isEarned = self.pers["killstreaks"][index].earned;
+	awardXp = self.pers["killstreaks"][index].awardXp;
+	kID = self.pers["killstreaks"][index].kID;
 
 	assert( isDefined( streakName ) );
 	assert( isDefined( level.killstreakFuncs[ streakName ] ) );
@@ -278,7 +278,6 @@ killstreakUsePressed()
 //this overwrites killstreak at index 0 and decrements all other killstreaks (FCLS style)
 shuffleKillStreaksFILO( streakName )
 {
-	self iPrintLnBold("streak shuffled");
 	for (i = 0; i <  3; i++ )
 	{
 		if (streakName == self getPlayerData( "killstreaks", i ) ) 
@@ -404,39 +403,41 @@ killstreakUseWaiter()
 	for ( ;; )
 	{
 		self waittill ( "weapon_change", newWeapon );
-		
+
 		if ( !isAlive( self ) )
 			continue;
 
-		if ( !isDefined( self.pers["killstreaks"][0] ) )
-			continue;
-
-		if ( newWeapon != getKillstreakWeapon( self.pers["killstreaks"][0].streakName ) )
-			continue;
-
-		waittillframeend;
-
-		streakName = self.pers["killstreaks"][0].streakName;
-		result = self killstreakUsePressed();
-
-		//no force switching weapon for ridable killstreaks
-		if ( !isRideKillstreak( streakName ) || !result )
+		foreach( i, weapon in self.pers["killstreaks"])
 		{
-			if ( !self hasWeapon( self getLastWeapon() ) )
-				self switchToWeapon( self getFirstPrimaryWeapon() );			
-			else
-				self switchToWeapon( self getLastWeapon() );
-		}
-
-		// give time to switch to the near weapon; when the weapon is none (such as during a "disableWeapon()" period
-		// re-enabling the weapon immediately does a "weapon_change" to the killstreak weapon we just used.  In the case that 
-		// we have two of that killstreak, it immediately uses the second one
-		if ( self getCurrentWeapon() == "none" )
-		{
-			while ( self getCurrentWeapon() == "none" )
-				wait ( 0.05 );
+			if ( !isDefined( self.pers["killstreaks"][i] ) )
+				continue;
+			if ( newWeapon != getKillstreakWeapon( self.pers["killstreaks"][i].streakName ) )
+				continue;
+				streakName = self.pers["killstreaks"][i].streakName;
 
 			waittillframeend;
+
+			result = self killstreakUsePressed(i);
+
+			//no force switching weapon for ridable killstreaks
+			if ( !isRideKillstreak( streakName ) || !result )
+			{
+				if ( !self hasWeapon( self getLastWeapon() ) )
+					self switchToWeapon( self getFirstPrimaryWeapon() );			
+				else
+					self switchToWeapon( self getLastWeapon() );
+			}
+
+			// give time to switch to the near weapon; when the weapon is none (such as during a "disableWeapon()" period
+			// re-enabling the weapon immediately does a "weapon_change" to the killstreak weapon we just used.  In the case that 
+			// we have two of that killstreak, it immediately uses the second one
+			if ( self getCurrentWeapon() == "none" )
+			{
+				while ( self getCurrentWeapon() == "none" )
+					wait ( 0.05 );
+
+				waittillframeend;
+			}
 		}
 	}
 }
@@ -588,12 +589,16 @@ giveKillstreakWeapon( weapon, isEarned )
 			
 	// 	self takeWeapon( item );
 	// }
-	self iPrintLnBold(isEarned);
 	self _giveWeapon( weapon, 0 );
 	for ( i=0; i < 3; i++)
 	{
 		reference = self getPlayerData("killstreaks", i);
 		check = getKillstreakWeapon(reference);
+		if(isEarned == false)
+		{
+			self _setActionSlot( 3, "weapon", weapon );
+			break;
+		}
 		if (check == weapon)
 		{
 			if ( i + 1 == 3 )
@@ -605,10 +610,10 @@ giveKillstreakWeapon( weapon, isEarned )
 				self _setActionSlot( ( i + 1), "weapon", weapon);
 			}
 		}
-		if(isEarned == 0)
-		{
-			self _setActionSlot( 3, "weapon", weapon );
-		}
+		// if(isEarned == 0)
+		// {
+		// 	self _setActionSlot( 3, "weapon", weapon );
+		// }
 	}
 }
 
@@ -667,7 +672,7 @@ giveOwnedKillstreakItem( skipDialog )
 	streakName = self.pers["killstreaks"][0].streakName;
 
 	weapon = getKillstreakWeapon( streakName );
-	self giveKillstreakWeapon( weapon );
+	self giveKillstreakWeapon( weapon, 1 );
 
 	if ( !isDefined( skipDialog ) && !level.inGracePeriod )
 		self leaderDialogOnPlayer( streakName, "killstreak_earned" );
@@ -750,6 +755,8 @@ clearRideIntro( delay )
 
 drawKillstreakCounter()
 {
+	self setClientDvar("ui_startupmessage", 0);
+
 	if ( isDefined( self.bar ) )
 	{
 		for ( i = 0; i < self.bar.size; i++)
@@ -791,12 +798,13 @@ drawKillstreakCounter()
 		self.bar[i].alignY = "middle";
 		self.bar[i].horzAlign = "right";
 		self.bar[i].vertAlign = "bottom";
+		self.bar[i].hidewheninmenu = true;
 		self.bar[i] setshader( "hud_killstreak_bar_empty", 16, 8 );
 	}
 	for( ;; )
 	{
 		self endon("death");
-		if ( ( self maps\mp\_flashgrenades::isFlashbanged() ) || ( self getCurrentWeapon() == "ac130_25mm_mp" ) || ( self getCurrentWeapon() == "ac130_40mm_mp" ) || ( self getCurrentWeapon() == "ac130_105mm_mp" ) || self getCurrentWeapon() == "killstreak_helicopter_minigun_mp" || self getCurrentWeapon() == "killstreak_predator_missile_mp" )
+		if ( isEMPed() || isNuked() || ( self maps\mp\_flashgrenades::isFlashbanged() ) || ( self getCurrentWeapon() == "heli_remote_mp" ) || ( self getCurrentWeapon() == "ac130_25mm_mp" ) || ( self getCurrentWeapon() == "ac130_40mm_mp" ) || ( self getCurrentWeapon() == "ac130_105mm_mp" ) || self getCurrentWeapon() == "killstreak_helicopter_minigun_mp" || self getCurrentWeapon() == "killstreak_predator_missile_mp" )
 		{
 			for (i = 0; i < self.barHeight; i++)
 			{
@@ -820,6 +828,7 @@ drawKillstreakCounter()
 			{
 				for ( i = 0; i < self.streakBar["height_two"]; i++)
 				{
+					self setClientDvar("ui_startupmessage", 1);
 					self.bar[i].alpha = 1;
 				}
 			}
@@ -834,6 +843,7 @@ drawKillstreakCounter()
 			{
 				for ( i = 0; i < self.barHeight; i++)
 				{
+					self setClientDvar("ui_startupmessage", 2);
 					self.bar[i].alpha = 1;
 				}
 			}
@@ -842,12 +852,13 @@ drawKillstreakCounter()
 		{
 			self.bar[i] setshader( "hud_killstreak_bar_full", 16, 8 );
 		}
-		if (self.pers["cur_kill_streak"] == self.barHeight)
+		if (self.pers["cur_kill_streak"] >= self.barHeight)
 		{
 			for ( i = 0; i < self.bar.size; i++)
 			{
 				self.bar[i] destroy();
 			}
+			self setClientDvar("ui_startupmessage", 3);
 			break;
 		}
 		wait(0.1);
