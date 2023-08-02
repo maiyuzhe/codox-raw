@@ -767,6 +767,12 @@ drawKillstreakCounter()
 	self.streakBar["height_one"] = getStreakCost(self getPlayerData("killstreaks", 0));
 	self.streakBar["height_two"] = getStreakCost(self getPlayerData("killstreaks", 1));
 	self.streakBar["height_three"] = getStreakCost(self getPlayerData("killstreaks", 2));
+	if(self _hasPerk("specialty_hardline"))
+	{
+		self.streakBar["height_one"] = getStreakCost(self getPlayerData("killstreaks", 0)) - 1;
+		self.streakBar["height_two"] = getStreakCost(self getPlayerData("killstreaks", 1)) - 1;
+		self.streakBar["height_three"] = getStreakCost(self getPlayerData("killstreaks", 2)) - 1;
+	}
 	self.bar = [];
 	self.barHeight = self.streakBar["height_three"];
 
